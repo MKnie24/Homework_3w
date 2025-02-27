@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Client</title>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- React & Babel -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <script type="text/babel">
+        function ChannelList({ onSelectChannel }) {
+            const [channels, setChannels] = React.useState([]);
+            const [search, setSearch] = React.useState("");
+
+            React.useEffect(() => {
+                fetch("http://vm146.rz.uos.de/hub/channels") // university hub
+                    .then(response => response.json())
+                    .then(data => setChannels(data.channels || []));
+            }, []);
+
+            return (
+                <div>
+                    <h2>Available Channels</h2>
+                    <input
+                        type="text"
+                        placeholder="Search channels..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value.toLowerCase())}
+                    />
+                    <ul>
+                        {channels
+                            .filter(channel => channel.name.toLowerCase().includes(search))
+                            .map(channel => (
+                                <li key={channel.id}>
+                                    <button onClick={() => onSelectChannel(channel)}>
+                                        {channel.name} (Type: {channel.type_of_service})
+                                    </button>
+                                </li>
+                            ))}
+                    </ul>
+                </div>
+            );
+        }
+
+        function ChatWindow({ channel, onBack }) {
+            const [messages, setMessages] = React.useState([]);
+            const [content, setContent] = React.useState("");
+            const [username, setUsername] = React.useState(localStorage.getItem("username") || "");
+            const [unreadCount, setUnreadCount] = React.useState(0);
+            const [language, setLanguage] = React.useState("en");
+
+            React.useEffect(() => {
+                fetchMessages();
+                const interval = setInterval(fetchMessages, 5000);
+                return () => clearInterval(interval);
+            }, []);
+
+            function fetchMessages() {
+                fetch(channel.endpoint)
+                    .then(response => response.json())
+                    .then(data => {
+                        setMessages(data);
+                        setUnreadCount(data.length);
+                    })
+                    .catch(error => console.error("Error fetching messages:", error));
+            }
+
+            function sendMessage() {
+                if (!content.trim()) return;
+                fetch(channel.endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ sender: username, content })
+                })
+                .then(response => response.json())
+                .then(() => {
+                    setContent("");
+                    fetchMessages();
+                })
+                .catch(error => alert("Error sending message: " + error));
+            }
+
+            function changeLanguage(lang) {
+                setLanguage(lang);
+            }
+
+            return (
+                <div>
+                    <button onClick={onBack}>Back to Channels</button>
+                    <h2>{channel.name} - Chat</h2>
+                    <p><strong>Unread Messages:</strong> {unreadCount}</p>
+
+                    <div className="chat-box">
+                        {messages.map((msg, index) => (
+                            <div key={index} className="message">
+                                <strong>{msg.sender}:</strong>
+                                <p>{msg.translations[language] || "Translation unavailable"}</p>
+                                <div>
+                                    <button onClick={() => changeLanguage("original")}>Original</button>
+                                    <button onClick={() => changeLanguage("en")}>English</button>
+                                    <button onClick={() => changeLanguage("fr")}>French</button>
+                                    <button onClick={() => changeLanguage("de")}>German</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <input
+                        type="text"
+                        placeholder="Type a message..."
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                    />
+                    <button onClick={sendMessage}>Send</button>
+                </div>
+            );
+        }
+
+        function UserPrompt({ onSetUser }) {
+            const [name, setName] = React.useState("");
+
+            function saveUsername() {
+                if (name.trim()) {
+                    localStorage.setItem("username", name);
+                    onSetUser(name);
+                }
+            }
+
+            return (
+                <div>
+                    <h2>Enter Your Name</h2>
+                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} />
+                    <button onClick={saveUsername}>Save</button>
+                </div>
+            );
+        }
+
+        function App() {
+            const [username, setUsername] = React.useState(localStorage.getItem("username") || "");
+            const [selectedChannel, setSelectedChannel] = React.useState(null);
+
+            return (
+                <div>
+                    {username ? (
+                        selectedChannel ? (
+                            <ChatWindow channel={selectedChannel} onBack={() => setSelectedChannel(null)} />
+                        ) : (
+                            <ChannelList onSelectChannel={setSelectedChannel} />
+                        )
+                    ) : (
+                        <UserPrompt onSetUser={setUsername} />
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById("root"));
+    </script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Channel</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f0f0;
+            color: #333;
+        }
+
+        /* Header */
+        .header {
+            background-color: #8B0000;
+            color: white;
+            text-align: center;
+            padding: 25px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        /* Chat Container */
+        .chat-container {
+            width: 60%;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        /* Message */
+        .message {
+            background: #ffdddd;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #8B0000;
+        }
+
+        /* Translation Buttons */
+        .button-container {
+            margin-top: 5px;
+        }
+
+        .button {
+            background-color: #b22222; /* Firebrick */
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin: 3px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .button:hover {
+            background-color: #8B0000;
+        }
+
+        /* Chat Input */
+        .chat-input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #8B0000;
+            border-radius: 5px;
+        }
+
+        /* Submit Button */
+        .submit-button {
+            background-color: #8B0000;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 5px;
+        }
+    </style>
+    <script>
+        function changeTranslation(messageId, lang) {
+            document.getElementById(`content-${messageId}`).innerText =
+                document.getElementById(`translation-${messageId}-${lang}`).innerText;
+        }
+    </script>
+</head>
+<body>
+
+    <div class="header">
+        AI Chat Channel
+    </div>
+
+    <p>Welcome to the Multi-Language Chat! Messages are displayed in English by default. Click "Original" to see the original message or choose another language.</p>
+
+    <div class="chat-container">
+        <h2>Chat Messages</h2>
+
+        {% for message in messages %}
+            <div class="message">
+                <strong>{{ message.sender }}</strong>:
+                <p id="content-{{ loop.index }}">{{ message.translations['en'] }}</p> <!-- Default to English -->
+
+                <!-- Hidden translations -->
+                <p style="display: none;" id="translation-{{ loop.index }}-original">{{ message.original }}</p>
+                <p style="display: none;" id="translation-{{ loop.index }}-en">{{ message.translations['en'] }}</p>
+                <p style="display: none;" id="translation-{{ loop.index }}-de">{{ message.translations['de'] }}</p>
+                <p style="display: none;" id="translation-{{ loop.index }}-fr">{{ message.translations['fr'] }}</p>
+                <p style="display: none;" id="translation-{{ loop.index }}-it">{{ message.translations['it'] }}</p>
+                <p style="display: none;" id="translation-{{ loop.index }}-es">{{ message.translations['es'] }}</p>
+                <p style="display: none;" id="translation-{{ loop.index }}-pt">{{ message.translations['pt'] }}</p>
+
+                <p style="font-size: 60%">Timestamp: {{ message.timestamp }}</p>
+
+                <!-- Translation buttons -->
+                <div class="button-container">
+                    <button class="button" onclick="changeTranslation({{ loop.index }}, 'original')">Original</button>
+                    <button class="button" onclick="changeTranslation({{ loop.index }}, 'en')">English</button>
+                    <button class="button" onclick="changeTranslation({{ loop.index }}, 'de')">German</button>
+                    <button class="button" onclick="changeTranslation({{ loop.index }}, 'fr')">French</button>
+                    <button class="button" onclick="changeTranslation({{ loop.index }}, 'it')">Italian</button>
+                    <button class="button" onclick="changeTranslation({{ loop.index }}, 'es')">Spanish</button>
+                    <button class="button" onclick="changeTranslation({{ loop.index }}, 'pt')">Portuguese</button>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="chat-container">
+        <h2>Send a Message</h2>
+        <form action="post" method="post">
+            <input type="hidden" name="channel" value="{{ channel.endpoint | urlencode }}">
+            <input type="text" name="sender" class="chat-input" placeholder="Your Name">
+            <input type="text" name="content" class="chat-input" placeholder="Type a message...">
+            <input type="submit" value="Send" class="submit-button">
+        </form>
+    </div>
+
+</body>
+</html>
