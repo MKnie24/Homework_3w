@@ -123,6 +123,9 @@ def translate_message(text, target_lang):
     except Exception:
         return "Translation failed"
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"name": CHANNEL_NAME}), 200
 
 if __name__ == '__main__':
     app.run(port=5001, debug=True)
